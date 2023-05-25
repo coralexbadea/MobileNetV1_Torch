@@ -26,7 +26,7 @@ __all__ = [
 ]
 
 
-def image_to_tensor(image: np.ndarray, range_norm: bool, half: bool) -> torch.Tensor: ##undefined
+def image_to_tensor(image: np.ndarray, range_norm: bool, half: bool) -> torch.Tensor: #function that converts the image data type to the tensort data type
     """Convert the image data type to the Tensor (NCWH) data type supported by PyTorch
 
     Args:
@@ -43,7 +43,7 @@ def image_to_tensor(image: np.ndarray, range_norm: bool, half: bool) -> torch.Te
 
     """
     # Convert image data type to Tensor data type
-    tensor = F_vision.to_tensor(image) ##undefined
+    tensor = F_vision.to_tensor(image) #convert image data type to Tensor data type
 
     # Scale the image data from [0, 1] to [-1, 1]
     if range_norm: ##undefined
@@ -56,7 +56,7 @@ def image_to_tensor(image: np.ndarray, range_norm: bool, half: bool) -> torch.Te
     return tensor
 
 
-def tensor_to_image(tensor: torch.Tensor, range_norm: bool, half: bool) -> Any: ##undefined
+def tensor_to_image(tensor: torch.Tensor, range_norm: bool, half: bool) -> Any: #function that converts the tensor data type to image data type
     """Convert the Tensor(NCWH) data type supported by PyTorch to the np.ndarray(WHC) image data type
 
     Args:

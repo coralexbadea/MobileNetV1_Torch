@@ -11,18 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import queue##undefined
+import queue # import the queue module for data prefetching
 import sys
-import threading##undefined
-from glob import glob##undefined
+import threading # import the threading module for parallel execution
+from glob import glob # import the glob module for file path matching
 
-import cv2##undefined
+import cv2 # import OpenCV library for image processing
 import torch
-from PIL import Image##undefined
-from torch.utils.data import Dataset, DataLoader##undefined
-from torchvision import transforms##undefined
-from torchvision.datasets.folder import find_classes##undefined
-from torchvision.transforms import TrivialAugmentWide##undefined
+from PIL import Image # import the Image module from PIL library for image manipulation
+from torch.utils.data import Dataset, DataLoader # import necessary classes for dataset loading and data loading
+from torchvision import transforms # import transformations for data augmentation
+from torchvision.datasets.folder import find_classes # import function to find classes in a dataset folder
+from torchvision.transforms import TrivialAugmentWide # import custom augmentation transformation
 
 import imgproc
 
@@ -41,7 +41,7 @@ else:
     delimiter = "/"
 
 
-class ImageDataset(Dataset):##undefined
+class ImageDataset(Dataset): # define a class that handles the image dataset of the model
     """Define training/valid dataset loading methods.
 
     Args:
@@ -54,21 +54,21 @@ class ImageDataset(Dataset):##undefined
     def __init__(self, image_dir: str, image_size: int, mean: list, std: list, mode: str) -> None:
         super(ImageDataset, self).__init__()
         # Iterate over all image paths
-        self.image_file_paths = glob(f"{image_dir}/*/*")##undefined
+        self.image_file_paths = glob(f"{image_dir}/*/*") # get the paths of all image files in the dataset
         # Form image class label pairs by the folder where the image is located
-        _, self.class_to_idx = find_classes(image_dir)##undefined
-        self.image_size = image_size##undefined
-        self.mode = mode##undefined
+        _, self.class_to_idx = find_classes(image_dir) # form class-label pairs based on folder structure
+        self.image_size = image_size # size of the images
+        self.mode = mode # dataset loading mode
         self.delimiter = delimiter
 
-        if self.mode == "Train":##undefined
+        if self.mode == "Train": # if the model is in training mode
             # Use PyTorch's own data enhancement to enlarge and enhance data
             self.pre_transform = transforms.Compose([
                 transforms.RandomResizedCrop(self.image_size),
-                TrivialAugmentWide(),##undefined
-                transforms.RandomRotation([0, 270]),##undefined
-                transforms.RandomHorizontalFlip(0.5),##undefined
-                transforms.RandomVerticalFlip(0.5),##undefined
+                TrivialAugmentWide(), # custom augmentation transformation
+                transforms.RandomRotation([0, 270]),# set the random rotation of the transformation 
+                transforms.RandomHorizontalFlip(0.5), # set the random horizontal flip of the transformation
+                transforms.RandomVerticalFlip(0.5), # set the random vertical flip of the transformation
             ])
         elif self.mode == "Valid" or self.mode == "Test":
             # Use PyTorch's own data enhancement to enlarge and enhance data
@@ -84,39 +84,39 @@ class ImageDataset(Dataset):##undefined
             transforms.Normalize(mean, std)
         ])
 
-    def __getitem__(self, batch_index: int) -> [torch.Tensor, int]:##undefined
-        image_dir, image_name = self.image_file_paths[batch_index].split(self.delimiter)[-2:]##undefined
+    def __getitem__(self, batch_index: int) -> [torch.Tensor, int]: # define a getitem method for the ImageDataset class that takes a batch index, and returns a list containing a tensor and an int
+        image_dir, image_name = self.image_file_paths[batch_index].split(self.delimiter)[-2:] # split image file path into directory and file name
         # Read a batch of image data
-        if image_name.split(".")[-1].lower() in IMG_EXTENSIONS:##undefined
-            image = cv2.imread(self.image_file_paths[batch_index])##undefined
-            target = self.class_to_idx[image_dir]##undefined
+        if image_name.split(".")[-1].lower() in IMG_EXTENSIONS:# check if the image file extension is supported
+            image = cv2.imread(self.image_file_paths[batch_index]) # read image using OpenCV
+            target = self.class_to_idx[image_dir] # get the class label based on the folder name
         else:
             raise ValueError(f"Unsupported image extensions, Only support `{IMG_EXTENSIONS}`, "
                              "please check the image file extensions.")
 
         # BGR to RGB
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)##undefined
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) # convert image from BGR to RGB
 
         # OpenCV convert PIL
-        image = Image.fromarray(image) ##undefined
+        image = Image.fromarray(image) # convert image from OpenCV format to PIL format
 
         # Data preprocess
-        image = self.pre_transform(image) ##undefined
+        image = self.pre_transform(image) # apply pre-processing transformations
 
         # Convert image data into Tensor stream format (PyTorch).
         # Note: The range of input and output is between [0, 1]
-        tensor = imgproc.image_to_tensor(image, False, False) ##undefined
+        tensor = imgproc.image_to_tensor(image, False, False) # convert image to tensor
 
         # Data postprocess
-        tensor = self.post_transform(tensor) ##undefined
+        tensor = self.post_transform(tensor)  # apply post-processing transformations
 
-        return {"image": tensor, "target": target} ##undefined
+        return {"image": tensor, "target": target} # return the image after the applied transformations into tensor stream format
 
     def __len__(self) -> int:
         return len(self.image_file_paths)
 
 
-class PrefetchGenerator(threading.Thread): ##undefined
+class PrefetchGenerator(threading.Thread): # define a data prefetch generator class
     """A fast data prefetch generator.
 
     Args:
@@ -124,16 +124,16 @@ class PrefetchGenerator(threading.Thread): ##undefined
         num_data_prefetch_queue (int): How many early data load queues.
     """
 
-    def __init__(self, generator, num_data_prefetch_queue: int) -> None:##undefined
+    def __init__(self, generator, num_data_prefetch_queue: int) -> None: # define an initialization method for the PrefetchGenerator class
         threading.Thread.__init__(self)
-        self.queue = queue.Queue(num_data_prefetch_queue) ##undefined
-        self.generator = generator##undefined
+        self.queue = queue.Queue(num_data_prefetch_queue)  # create a data prefetch queue
+        self.generator = generator # set the data prefetch generator
         self.daemon = True
         self.start()
 
     def run(self) -> None:
         for item in self.generator:
-            self.queue.put(item) ##undefined
+            self.queue.put(item) # put the items from the generator into the data prefetch queue
         self.queue.put(None)
 
     def __next__(self):
@@ -146,7 +146,7 @@ class PrefetchGenerator(threading.Thread): ##undefined
         return self
 
 
-class PrefetchDataLoader(DataLoader):##undefined
+class PrefetchDataLoader(DataLoader): # define a fast data prefetch dataloader class
     """A fast data prefetch dataloader.
 
     Args:
@@ -154,15 +154,15 @@ class PrefetchDataLoader(DataLoader):##undefined
         kwargs (dict): Other extended parameters.
     """
 
-    def __init__(self, num_data_prefetch_queue: int, **kwargs) -> None: ##undefined
-        self.num_data_prefetch_queue = num_data_prefetch_queue ##undefined
+    def __init__(self, num_data_prefetch_queue: int, **kwargs) -> None: # define the initialization method for the prefetch data loader
+        self.num_data_prefetch_queue = num_data_prefetch_queue # store the number of data prefetch queues
         super(PrefetchDataLoader, self).__init__(**kwargs) 
 
     def __iter__(self):
         return PrefetchGenerator(super().__iter__(), self.num_data_prefetch_queue)
 
 
-class CPUPrefetcher:##undefined
+class CPUPrefetcher: # define a CPU prefetcher class used to accelerate data reading
     """Use the CPU side to accelerate data reading.
 
     Args:
@@ -187,7 +187,7 @@ class CPUPrefetcher:##undefined
         return len(self.original_dataloader)
 
 
-class CUDAPrefetcher: ##undefined
+class CUDAPrefetcher: # define a CUDA prefetcher class used to accelerate data reading
     """Use the CUDA side to accelerate data reading.
 
     Args:
@@ -195,36 +195,36 @@ class CUDAPrefetcher: ##undefined
         device (torch.device): Specify running device.
     """
 
-    def __init__(self, dataloader, device: torch.device): ##undefined
-        self.batch_data = None ##undefined
-        self.original_dataloader = dataloader ##undefined
-        self.device = device ##undefined
+    def __init__(self, dataloader, device: torch.device): # initialization method for the CUDA prefetcher
+        self.batch_data = None # variable to store the batch data
+        self.original_dataloader = dataloader # tore the original dataloader
+        self.device = device  # store the specified device
 
-        self.data = iter(dataloader) ##undefined
-        self.stream = torch.cuda.Stream() ##undefined
-        self.preload() ##undefined
+        self.data = iter(dataloader) # create an iterator over the dataloader
+        self.stream = torch.cuda.Stream() # create a CUDA stream
+        self.preload() # preload the first batch of data
 
-    def preload(self):##undefined
-        try: ##undefined
-            self.batch_data = next(self.data) ##undefined
-        except StopIteration: ##undefined
-            self.batch_data = None ##undefined
-            return None ##undefined
+    def preload(self): # method that preloads batches of data
+        try: # try to fetch the next batch of data
+            self.batch_data = next(self.data) # get the next batch data
+        except StopIteration: # if all branches have been fetched
+            self.batch_data = None # set batch_data to None
+            return None # return None
 
-        with torch.cuda.stream(self.stream): ##undefined
-            for k, v in self.batch_data.items(): ##undefined
-                if torch.is_tensor(v): ##undefined
-                    self.batch_data[k] = self.batch_data[k].to(self.device, non_blocking=True) ##undefined
+        with torch.cuda.stream(self.stream): # execute the following operations in the CUDA stream
+            for k, v in self.batch_data.items(): # iterate over the items in the batch data
+                if torch.is_tensor(v): # if the item is a tensor
+                    self.batch_data[k] = self.batch_data[k].to(self.device, non_blocking=True) # move the tensor to the specified device
 
-    def next(self):##undefined
-        torch.cuda.current_stream().wait_stream(self.stream) ##undefined
-        batch_data = self.batch_data ##undefined
-        self.preload() ##undefined
-        return batch_data ##undefined
+    def next(self):# method that returns the current batch data and preloads the next one
+        torch.cuda.current_stream().wait_stream(self.stream)  # wait for the CUDA stream to finish
+        batch_data = self.batch_data #store the current batch data
+        self.preload() # preload the next batch of data
+        return batch_data # return the current batch data
 
-    def reset(self):##undefined
-        self.data = iter(self.original_dataloader) ##undefined
-        self.preload() ##undefined
+    def reset(self): # method for resetting the CUDA prefetcher
+        self.data = iter(self.original_dataloader) # reset the data iterator to the beginning
+        self.preload()  # preload the first batch of data
 
-    def __len__(self) -> int:##undefined
-        return len(self.original_dataloader) ##undefined
+    def __len__(self) -> int:# method that returns the length of the original dataloader
+        return len(self.original_dataloader)  # return the length of the original dataloader

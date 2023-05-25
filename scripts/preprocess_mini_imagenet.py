@@ -11,61 +11,62 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import csv##undefined
+import csv # import the csv module for reading CSV files
 import os
 
 from PIL import Image
 
-train_csv_path = "../data/MiniImageNet_1K/original/train.csv"##undefined
-valid_csv_path = "../data/MiniImageNet_1K/original/valid.csv"##undefined
-test_csv_path = "../data/MiniImageNet_1K/original/test.csv"##undefined
+train_csv_path = "../data/MiniImageNet_1K/original/train.csv" # path to the train.csv file
+valid_csv_path = "../data/MiniImageNet_1K/original/valid.csv" # path to the valid.csv file
+test_csv_path = "../data/MiniImageNet_1K/original/test.csv" # path to the test.csv file
 
-inputs_images_dir = "../data/MiniImageNet_1K/original/mini_imagenet/images"##undefined
+inputs_images_dir = "../data/MiniImageNet_1K/original/mini_imagenet/images"  # path to the directory containing the input images
 output_images_dir = "../data/MiniImageNet_1K/"
 
-train_label = {}##undefined
-val_label = {}##undefined
-test_label = {}##undefined
-with open(train_csv_path) as csvfile:##undefined
-    csv_reader = csv.reader(csvfile)##undefined
-    birth_header = next(csv_reader)##undefined
-    for row in csv_reader:##undefined
-        train_label[row[0]] = row[1]##undefined
+train_label = {} # dictionary to store the training labels
+val_label = {} # dictionary to store the validation labels
+test_label = {} # dictionary to store the test labels
 
-with open(valid_csv_path) as csvfile:##undefined
-    csv_reader = csv.reader(csvfile)##undefined
-    birth_header = next(csv_reader)##undefined
-    for row in csv_reader:##undefined
-        val_label[row[0]] = row[1]##undefined
+with open(train_csv_path) as csvfile: # open the training CSV file
+    csv_reader = csv.reader(csvfile) # create a csv_reader object to read the file
+    birth_header = next(csv_reader) # read the header row and skip it
+    for row in csv_reader:  # iterate over each row of the csv file
+        train_label[row[0]] = row[1] # assign the value in the second column to the train_label dictionary using the value in the first column as the key
 
-with open(test_csv_path) as csvfile:##undefined
-    csv_reader = csv.reader(csvfile)##undefined
-    birth_header = next(csv_reader)##undefined
-    for row in csv_reader:##undefined
-        test_label[row[0]] = row[1]##undefined
+with open(valid_csv_path) as csvfile: # open the validation CSV file
+    csv_reader = csv.reader(csvfile) # create a csv_reader object to read the file
+    birth_header = next(csv_reader) # read the header row and skip it
+    for row in csv_reader: # iterate over each row of the csv file
+        val_label[row[0]] = row[1] # Assign the value in the second column to the val_label dictionary using the value in the first column as the key
 
-for png in os.listdir(inputs_images_dir):##undefined
-    path = inputs_images_dir + "/" + png##undefined
-    im = Image.open(path)##undefined
-    if png in train_label.keys():##undefined
-        tmp = train_label[png]##undefined
-        temp_path = output_images_dir + "/train" + "/" + tmp##undefined
-        if not os.path.exists(temp_path):##undefined
-            os.makedirs(temp_path)##undefined
-        t = temp_path + "/" + png##undefined
+with open(test_csv_path) as csvfile: # open the test CSV file
+    csv_reader = csv.reader(csvfile) # create a csv_reader object to read the file
+    birth_header = next(csv_reader) # read the header row and skip it
+    for row in csv_reader: # iterate over each row of the csv file
+        test_label[row[0]] = row[1] # assign the value in the second column to the test_label dictionary using the value in the first column as the key
+
+for png in os.listdir(inputs_images_dir): # iterate over each file in the input images directory
+    path = inputs_images_dir + "/" + png # create the complete file path
+    im = Image.open(path) # open the image and store it in the variable im
+    if png in train_label.keys(): # check if the image filename exists as a key in the training label dictionary
+        tmp = train_label[png] # get the corresponding label from the training label dictionary
+        temp_path = output_images_dir + "/train" + "/" + tmp # create the directory path for saving the processed image
+        if not os.path.exists(temp_path): # check if the directory path doesn't exist
+            os.makedirs(temp_path) # if it doesn't, create the directory
+        t = temp_path + "/" + png # create the complete file path for saving the processed image
         im.save(t)
 
-    elif png in val_label.keys():##undefined
-        tmp = val_label[png]##undefined
-        temp_path = output_images_dir + "/valid" + "/" + tmp ##undefined
-        if not os.path.exists(temp_path):##undefined
-            os.makedirs(temp_path)
+    elif png in val_label.keys():  # check if the image filename exists as a key in the validation label dictionary
+        tmp = val_label[png] # get the corresponding label from the validation label dictionary
+        temp_path = output_images_dir + "/valid" + "/" + tmp  # create the directory path for saving the processed image
+        if not os.path.exists(temp_path): # check if the directory path doesn't exist
+            os.makedirs(temp_path) # if it doesn't, create the directory
         t = temp_path + "/" + png
-        im.save(t) ##undefined
+        im.save(t) # save the processed image
 
-    elif png in test_label.keys(): ##undefined
-        tmp = test_label[png] ##undefined
-        temp_path = output_images_dir + "/test" + "/" + tmp ##undefined
+    elif png in test_label.keys(): # check if the image filename exists as a key in the test label dictionary
+        tmp = test_label[png] # get the corresponding label from the test label dictionary
+        temp_path = output_images_dir + "/test" + "/" + tmp # create the directory path for saving the processed image
         if not os.path.exists(temp_path):
             os.makedirs(temp_path)
         t = temp_path + "/" + png
